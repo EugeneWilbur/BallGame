@@ -2,13 +2,13 @@
 #include <fstream>
 #include <vector>
 
-
 template<typename t>
 
 class myPQueue{
 private:
     t *nums;
     int curSize{}, capacity{};
+    bool isRusty = false;
 
 public:
     explicit myPQueue(int capacity): nums{new t[capacity]}, capacity{capacity} {}
@@ -40,6 +40,14 @@ public:
         }
     }
 
+    bool empty(){
+        return this->size() == 0;
+    }
+
+    void markRusty(){
+        this->isRusty = true;
+    }
+
     void print(){
         for(int i = 0; i < curSize; i++){
             std::cout << nums[i] << " ";
@@ -63,7 +71,42 @@ public:
         return (i*2)+2;
     }
 
-    void push(int num){
+    int digitSum(t n){
+        t sum = 0;
+
+        while(n > 0){
+            sum += n % 10;
+            n /= 10;
+        }
+
+        return sum;
+    }
+
+    void remove(t value){
+       int index = -1;
+
+        for(int i = 0; i < this->size(); i++){
+            if(nums[i] == value){
+                index = i;
+            }
+        }
+
+        if(index < 0){
+            std::cerr << "Cannot remove value that is not in heap." << std::endl;
+            return;
+        }
+
+        //keep indexed number;
+        t temp = nums[index];
+        //replace index with last number;
+        nums[index] = nums[curSize-1];
+        curSize--;
+
+        //fix heap
+        myHeapify(0);
+    }
+
+    void push(t num){
         if(curSize == capacity){
             std::cerr << "Error: Not enough space." << std::endl;
             return;
@@ -74,15 +117,30 @@ public:
 
         nums[i] = num;
 
-        while((i && nums[getParent(i)] < nums[i])){
-            int temp = nums[i];
-            nums[i] = nums[getParent(i)];
-            nums[getParent(i)] = temp;
-            i = getParent(i);
+        if(this->isRusty){
+            while((i && digitSum(nums[getParent(i)]) < digitSum(nums[i]))){
+                t temp = nums[i];
+                nums[i] = nums[getParent(i)];
+                nums[getParent(i)] = temp;
+                i = getParent(i);
+            }
+        } else {
+            while((i && nums[getParent(i)] < nums[i])){
+                t temp = nums[i];
+                nums[i] = nums[getParent(i)];
+                nums[getParent(i)] = temp;
+                i = getParent(i);
+            }
         }
+
+
     }
 
-    int pop(){
+    t top(){
+        return nums[0];
+    }
+
+    t pop(){
         if(curSize <= 0){
             std::cerr << "No items left in queue." << std::endl;
             return 0;
@@ -109,17 +167,37 @@ public:
         int right = getRight(i);
         int largest = i;
 
-        if(left < curSize && nums[getLeft(i)] > nums[i]){
-            largest = left;
-        }
-        if(right < curSize && nums[right] > nums[largest]){
-            largest = right;
-        }
-        if(largest != i){
-            int temp = nums[i];
-            nums[i] = nums[largest];
-            nums[largest] = temp;
-            myHeapify(largest);
+        t lSum = digitSum(nums[getLeft(i)]);
+        t rSum = digitSum(nums[right]);
+        t iSum = digitSum(nums[i]);
+
+        if(this->isRusty){
+            if(left < curSize && lSum > iSum){
+                largest = left;
+            }
+            t largestSum = digitSum(nums[largest]);
+            if(right < curSize && rSum > largestSum){
+                largest = right;
+            }
+            if(largest != i){
+                t temp = nums[i];
+                nums[i] = nums[largest];
+                nums[largest] = temp;
+                myHeapify(largest);
+            }
+        } else {
+            if(left < curSize && nums[getLeft(i)] > nums[i]){
+                largest = left;
+            }
+            if(right < curSize && nums[right] > nums[largest]){
+                largest = right;
+            }
+            if(largest != i){
+                t temp = nums[i];
+                nums[i] = nums[largest];
+                nums[largest] = temp;
+                myHeapify(largest);
+            }
         }
     }
 };
@@ -128,7 +206,8 @@ public:
 class BallGame{
 private:
     int numBalls{}, maxTurns{};
-    myPQueue<int> *nums{};
+    myPQueue<long> scott{};
+    myPQueue<long> rusty{};
     bool isHeads{};
 
 public:
@@ -149,11 +228,14 @@ public:
                 this->maxTurns = stoi(s.substr(mark));
             }else if(j == 1){
                 //step 2 init.
-                nums = new myPQueue<int>[numBalls];
+                scott = myPQueue<long>(numBalls);
+                rusty = myPQueue<long>(numBalls);
+                rusty.markRusty();
                 mark = 0;
                 //set the marker to the front of the string
                 for(int k = 0; k < this->numBalls; k++){
-                    nums->push(stoi(s, &mark));
+                    scott.push(stol(s));
+                    rusty.push(stol(s, &mark));
                     s = s.substr(mark);
                 }
             }else {
@@ -163,8 +245,29 @@ public:
         }
     }
 
-    void findWinner(){
-        //TODO complete this
+    std::vector<long> findWinner(){
+        long scottsScore = 0, rustysScore = 0;
+
+        while(!scott.empty()){
+            for(int i = 0; i < maxTurns; i++){
+                if(isHeads){
+                    rusty.remove(scott.top());
+                    scottsScore += scott.pop();
+                } else {
+                    scott.remove(rusty.top());
+                    rustysScore += rusty.pop();
+                }
+                if(scott.empty() || rusty.empty()){
+                    break;
+                }
+            }
+            isHeads = !isHeads;
+        }
+        std::vector<long> results;
+        results.push_back(scottsScore);
+        results.push_back(rustysScore);
+
+        return results;
     }
 };
 
@@ -178,16 +281,18 @@ int main(int argc, char *argv[]) {
     std::string s;
     std::getline(inputFile, s);
     int testCases = stoi(s);
+    std::ofstream output;
+    output.open("Output.txt");
+    std::vector<long> result;
 
     //run for loop for every test case.
     for(int i = 0; i < testCases; i++) {
-        //TODO remove this
-        std::cout << "Test: " << i + 1 << std::endl;
-
         BallGame currentGame(inputFile);
-        //currentGame.findWinner();
+        result = currentGame.findWinner();
+        output << result[0] << " " << result[1] << std::endl;
     }
 
+    output.close();
     inputFile.close();
     return 0;
 }
