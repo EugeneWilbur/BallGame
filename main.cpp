@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <ctime>
 
 template<typename t>
 
@@ -311,19 +310,13 @@ int main(int argc, char *argv[]) {
 
     std::vector<long> result;
 
-    double cpuTime;
-    clock_t start, end;
-
     //run for loop for every test case.
     for(int i = 0; i < testCases; i++) {
-        start = clock();
+
         BallGame currentGame(inputFile);
         result = currentGame.findWinner();
-        end = clock();
-        output << result[0] << " " << result[1] << std::endl;
 
-        cpuTime = ((double) (end - start)) / CLOCKS_PER_SEC;
-        std::cout << i + 1 << ": " << cpuTime << std::endl;
+        output << result[0] << " " << result[1] << std::endl;
     }
 
     output.close();
