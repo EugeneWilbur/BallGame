@@ -49,29 +49,26 @@ public:
         this->isRusty = true;
     }
 
-    void print(){
-        for(int i = 0; i < curSize; i++){
-            std::cout << nums[i] << " ";
-        }
-        std::cout << std::endl;
-    }
-
     int size(){
         return curSize;
     }
 
+    //returns index of parent.
     int getParent(int i){
         return (i-1)/2;
     }
 
+    //return index of left child.
     int getLeft(int i){
         return (i*2)+1;
     }
 
+    //returns index of right child.
     int getRight(int i){
         return (i*2)+2;
     }
 
+    //find the sum of all the digits in a number.
     t digitSum(t n){
         t sum = 0;
 
@@ -83,6 +80,7 @@ public:
         return sum;
     }
 
+    //remove object in heap by value.
     void remove(t value){
         int index = -1;
 
@@ -112,23 +110,24 @@ public:
             return;
         }
 
+        //i = last item slot
         int i = this->curSize;
         this->curSize++;
 
+        //put value in last item slot
         nums[i] = num;
 
-
+        //find out if its rusty, since he has a different priority
         if(this->isRusty){
-            while((i && digitSum(nums[getParent(i)]) <= digitSum(nums[i]))){
-
-
-                if(digitSum(nums[getParent(i)]) == digitSum(nums[i])){
-                    if(nums[getParent(i)] < nums[i]){
-                        t temp = nums[i];
-                        nums[i] = nums[getParent(i)];
-                        nums[getParent(i)] = temp;
-                    }
-                } else {
+            //make sure there parents are the highest sum of digits.
+            while(i && digitSum(nums[getParent(i)]) <= digitSum(nums[i])){
+                if(digitSum(nums[getParent(i)]) != digitSum(nums[i])){
+                    t temp = nums[i];
+                    nums[i] = nums[getParent(i)];
+                    nums[getParent(i)] = temp;
+                } else if(nums[getParent(i)] < nums[i]){
+                    //if ther parents are equal in sum of digits.
+                    //prioritise putting scott behind (pick the bigger of the two)
                     t temp = nums[i];
                     nums[i] = nums[getParent(i)];
                     nums[getParent(i)] = temp;
@@ -136,7 +135,8 @@ public:
                 i = getParent(i);
             }
         } else {
-            while((i && nums[getParent(i)] < nums[i])){
+            //this is scotts priority queue, so just push on as a max heap.
+            while(i && nums[getParent(i)] < nums[i]){
                 t temp = nums[i];
                 nums[i] = nums[getParent(i)];
                 nums[getParent(i)] = temp;
@@ -178,27 +178,22 @@ public:
         int right = getRight(i);
         int largest = i;
 
+        //reduce calling digit sum.
         t lSum = digitSum(nums[getLeft(i)]);
         t rSum = digitSum(nums[right]);
         t iSum = digitSum(nums[i]);
 
         if(this->isRusty){
+            //max heap prioritising sum of digits. if sum of digits
+            //is equal, prioritise value of number.
             if(left < curSize && lSum >= iSum){
-                if(lSum == iSum){
-                    if(nums[left] > nums[i]){
-                        largest = left;
-                    }
-                } else {
+                if(lSum != iSum || nums[left] > nums[i]){
                     largest = left;
                 }
             }
             t largestSum = digitSum(nums[largest]);
             if(right < curSize && rSum >= largestSum){
-                if(rSum == largestSum){
-                    if(nums[right] > nums[largest]){
-                        largest = right;
-                    }
-                } else {
+                if(rSum != largestSum || nums[right] > nums[largest]){
                     largest = right;
                 }
             }
@@ -209,6 +204,7 @@ public:
                 myHeapify(largest);
             }
         } else {
+            //scott's queue. Heapify as a standard max heap.
             if(left < curSize && nums[left] > nums[i]){
                 largest = left;
             }
@@ -271,6 +267,7 @@ public:
     std::vector<long> findWinner(){
         long scottsScore = 0, rustysScore = 0;
 
+        //if rusty is empty, scott will be too.
         while(!scott.empty()){
             for(int i = 0; i < maxTurns; i++){
                 if(isHeads){
@@ -281,9 +278,12 @@ public:
                     rustysScore += rusty.pop();
                 }
                 if(scott.empty() || rusty.empty()){
+                    //we need this extra condition in case one of the priority queue's goes
+                    //empty in the middle of someone turn.
                     break;
                 }
             }
+            //switch to other players turn.
             isHeads = !isHeads;
         }
         std::vector<long> results;
@@ -300,17 +300,19 @@ public:
 
 int main(int argc, char *argv[]) {
     std::ifstream inputFile;
+    std::ofstream output;
+
     inputFile.open(argv[1]);
+    output.open("Output.txt");
+
     std::string s;
     std::getline(inputFile, s);
     int testCases = stoi(s);
-    std::ofstream output;
-    output.open("Output.txt");
+
     std::vector<long> result;
+
     double cpuTime;
     clock_t start, end;
-
-
 
     //run for loop for every test case.
     for(int i = 0; i < testCases; i++) {
