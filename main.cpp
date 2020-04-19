@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <ctime>
 
 template<typename t>
 
@@ -83,7 +84,7 @@ public:
     }
 
     void remove(t value){
-       int index = -1;
+        int index = -1;
 
         for(int i = 0; i < this->size(); i++){
             if(this->nums[i] == value){
@@ -119,6 +120,8 @@ public:
 
         if(this->isRusty){
             while((i && digitSum(nums[getParent(i)]) <= digitSum(nums[i]))){
+
+
                 if(digitSum(nums[getParent(i)]) == digitSum(nums[i])){
                     if(nums[getParent(i)] < nums[i]){
                         t temp = nums[i];
@@ -304,12 +307,21 @@ int main(int argc, char *argv[]) {
     std::ofstream output;
     output.open("Output.txt");
     std::vector<long> result;
+    double cpuTime;
+    clock_t start, end;
+
+
 
     //run for loop for every test case.
     for(int i = 0; i < testCases; i++) {
+        start = clock();
         BallGame currentGame(inputFile);
         result = currentGame.findWinner();
+        end = clock();
         output << result[0] << " " << result[1] << std::endl;
+
+        cpuTime = ((double) (end - start)) / CLOCKS_PER_SEC;
+        std::cout << i + 1 << ": " << cpuTime << std::endl;
     }
 
     output.close();
