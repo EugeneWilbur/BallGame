@@ -71,7 +71,7 @@ public:
         return (i*2)+2;
     }
 
-    int digitSum(t n){
+    t digitSum(t n){
         t sum = 0;
 
         while(n > 0){
@@ -86,8 +86,9 @@ public:
        int index = -1;
 
         for(int i = 0; i < this->size(); i++){
-            if(nums[i] == value){
+            if(this->nums[i] == value){
                 index = i;
+                break;
             }
         }
 
@@ -96,14 +97,12 @@ public:
             return;
         }
 
-        //keep indexed number;
-        t temp = nums[index];
         //replace index with last number;
         nums[index] = nums[curSize-1];
         curSize--;
 
         //fix heap
-        myHeapify(0);
+        myHeapify(index);
     }
 
     void push(t num){
@@ -117,11 +116,20 @@ public:
 
         nums[i] = num;
 
+
         if(this->isRusty){
-            while((i && digitSum(nums[getParent(i)]) < digitSum(nums[i]))){
-                t temp = nums[i];
-                nums[i] = nums[getParent(i)];
-                nums[getParent(i)] = temp;
+            while((i && digitSum(nums[getParent(i)]) <= digitSum(nums[i]))){
+                if(digitSum(nums[getParent(i)]) == digitSum(nums[i])){
+                    if(nums[getParent(i)] < nums[i]){
+                        t temp = nums[i];
+                        nums[i] = nums[getParent(i)];
+                        nums[getParent(i)] = temp;
+                    }
+                } else {
+                    t temp = nums[i];
+                    nums[i] = nums[getParent(i)];
+                    nums[getParent(i)] = temp;
+                }
                 i = getParent(i);
             }
         } else {
@@ -172,12 +180,24 @@ public:
         t iSum = digitSum(nums[i]);
 
         if(this->isRusty){
-            if(left < curSize && lSum > iSum){
-                largest = left;
+            if(left < curSize && lSum >= iSum){
+                if(lSum == iSum){
+                    if(nums[left] > nums[i]){
+                        largest = left;
+                    }
+                } else {
+                    largest = left;
+                }
             }
             t largestSum = digitSum(nums[largest]);
-            if(right < curSize && rSum > largestSum){
-                largest = right;
+            if(right < curSize && rSum >= largestSum){
+                if(rSum == largestSum){
+                    if(nums[right] > nums[largest]){
+                        largest = right;
+                    }
+                } else {
+                    largest = right;
+                }
             }
             if(largest != i){
                 t temp = nums[i];
@@ -186,7 +206,7 @@ public:
                 myHeapify(largest);
             }
         } else {
-            if(left < curSize && nums[getLeft(i)] > nums[i]){
+            if(left < curSize && nums[left] > nums[i]){
                 largest = left;
             }
             if(right < curSize && nums[right] > nums[largest]){
